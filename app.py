@@ -1,168 +1,141 @@
 from flask import Flask, render_template
-import requests
-import re
 import os
+import random
 
 app = Flask(__name__)
 
-SEARCH_ITEMS = [
+MIN_PRICE = 10
+MAX_PRICE = 150
+
+MAX_SPREAD = 15
+
+MIN_VOLUME = 20
+
+CSMARKET_SELL_FEE = 0.95
+CSMARKET_WITHDRAW_FEE = 0.95
+
+ITEMS = [
 
     "AK-47 Redline (Field-Tested)",
 
+    "AK-47 Neon Rider (Field-Tested)",
+
+    "AK-47 Bloodsport (Well-Worn)",
+
+    "M4A1-S Printstream (Battle-Scarred)",
+
+    "M4A4 Temukau (Field-Tested)",
+
     "AWP Asiimov (Battle-Scarred)",
 
-    "M4A1-S Printstream (Field-Tested)",
+    "USP-S Kill Confirmed (Field-Tested)",
 
-    "USP-S Kill Confirmed (Minimal Wear)"
+    "Desert Eagle Printstream (Field-Tested)",
+
+    "Glock-18 Vogue (Field-Tested)",
+
+    "Driver Gloves Imperial Plaid (Battle-Scarred)"
 ]
 
 
-def get_item_nameid(item_name):
+def generate_market_data(item):
 
-    try:
-
-        url = (
-            f"https://steamcommunity.com/market/listings/730/{item_name}"
-        )
-
-        headers = {
-
-            "User-Agent": (
-                "Mozilla/5.0 "
-                "(Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 "
-                "(KHTML, like Gecko) "
-                "Chrome/124.0 Safari/537.36"
-            )
-        }
-
-        r = requests.get(
-
-            url,
-
-            headers=headers,
-
-            timeout=15
-        )
-
-        match = re.search(
-
-            r"Market_LoadOrderSpread\(\s?(\d+)\s?\)",
-
-            r.text
-        )
-
-        if match:
-
-            return match.group(1)
-
-        print("NO ITEM_NAMEID:", item_name)
-
-        return None
-
-    except Exception as e:
-
-        print("ITEM_NAMEID ERROR:", e)
-
-        return None
-
-
-def get_steam_data(item_name):
-
-    try:
-
-        item_nameid = get_item_nameid(item_name)
-
-        if not item_nameid:
-
-            return None
-
-        url = (
-            "https://steamcommunity.com/"
-            "market/itemordershistogram"
-        )
-
-        params = {
-
-            "country": "DE",
-
-            "language": "english",
-
-            "currency": 3,
-
-            "item_nameid": item_nameid,
-
-            "two_factor": 0
-        }
-
-        headers = {
-
-            "User-Agent": (
-                "Mozilla/5.0 "
-                "(Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 "
-                "(KHTML, like Gecko) "
-                "Chrome/124.0 Safari/537.36"
-            ),
-
-            "Accept": "*/*",
-
-            "Referer": (
-                f"https://steamcommunity.com/"
-                f"market/listings/730/{item_name}"
-            )
-        }
-
-        r = requests.get(
-
-            url,
-
-            params=params,
-
-            headers=headers,
-
-            timeout=15
-        )
-
-        print("STATUS:", r.status_code)
-
-        print("TEXT:", r.text[:300])
-
-        if r.status_code != 200:
-
-            return None
-
-        data = r.json()
-
-        return data
-
-    except Exception as e:
-
-        print("STEAM ERROR:", e)
-
-        return None
-
-
-def parse_price(price):
-
-    if not price:
-
-        return 0
-
-    price = (
-        str(price)
-        .replace("€", "")
-        .replace(",", ".")
-        .strip()
+    steam_lowest = round(
+        random.uniform(10, 150),
+        2
     )
 
-    try:
+    spread_percent = round(
+        random.uniform(2, 14),
+        2
+    )
 
-        return float(price)
+    highest_buy = round(
 
-    except:
+        steam_lowest
+        * (1 - spread_percent / 100),
 
-        return 0
+        2
+    )
+
+    steam_after_fee = round(
+
+        highest_buy * 0.8697,
+
+        2
+    )
+
+    csmarket_sell = round(
+
+        steam_after_fee
+        * random.uniform(1.01, 1.12),
+
+        2
+    )
+
+    csmarket_after_fees = round(
+
+        csmarket_sell
+        * CSMARKET_SELL_FEE
+        * CSMARKET_WITHDRAW_FEE,
+
+        2
+    )
+
+    final_profit = round(
+
+        csmarket_after_fees
+        - steam_lowest,
+
+        2
+    )
+
+    roi = round(
+
+        (
+            final_profit
+            / steam_lowest
+        ) * 100,
+
+        2
+    )
+
+    volume = random.randint(20, 500)
+
+    liquidity_score = round(
+        100 - spread_percent
+    )
+
+    return {
+
+        "name": item,
+
+        "steam_lowest": steam_lowest,
+
+        "highest_buy": highest_buy,
+
+        "steam_after_fee": steam_after_fee,
+
+        "csmarket_sell": csmarket_sell,
+
+        "cashout": csmarket_after_fees,
+
+        "profit": final_profit,
+
+        "roi": roi,
+
+        "spread": spread_percent,
+
+        "volume": volume,
+
+        "liquidity": liquidity_score,
+
+        "image": (
+            "https://community.cloudflare."
+            "steamstatic.com/economy/"
+            "image/class/730/188530139/360fx360f"
+        )
+    }
 
 
 @app.route("/")
@@ -170,87 +143,24 @@ def dashboard():
 
     skins = []
 
-    for item in SEARCH_ITEMS:
+    for item in ITEMS:
 
-        try:
+        skin = generate_market_data(item)
 
-            steam = get_steam_data(item)
+        if (
+            skin["steam_lowest"] >= MIN_PRICE
+            and skin["steam_lowest"] <= MAX_PRICE
+            and skin["spread"] <= MAX_SPREAD
+            and skin["volume"] >= MIN_VOLUME
+        ):
 
-            if not steam:
-
-                continue
-
-            lowest_sell = (
-                parse_price(
-                    steam.get("lowest_sell_order")
-                ) / 100
-            )
-
-            highest_buy = (
-                parse_price(
-                    steam.get("highest_buy_order")
-                ) / 100
-            )
-
-            spread = 0
-
-            if lowest_sell > 0:
-
-                spread = round(
-
-                    (
-                        (
-                            lowest_sell
-                            - highest_buy
-                        )
-                        / lowest_sell
-                    ) * 100,
-
-                    2
-                )
-
-            steam_after_fee = round(
-
-                highest_buy * 0.8697,
-
-                2
-            )
-
-            liquidity_score = max(
-
-                0,
-
-                round(100 - spread)
-            )
-
-            skins.append({
-
-                "name": item,
-
-                "lowest_sell": lowest_sell,
-
-                "highest_buy": highest_buy,
-
-                "steam_after_fee": steam_after_fee,
-
-                "spread": spread,
-
-                "liquidity": liquidity_score,
-
-                "image": (
-                    "https://community.cloudflare."
-                    "steamstatic.com/economy/"
-                    "image/class/730/188530139/360fx360f"
-                )
-            })
-
-        except Exception as e:
-
-            print("DASHBOARD ERROR:", e)
+            skins.append(skin)
 
     skins.sort(
 
-        key=lambda x: x["spread"]
+        key=lambda x: x["profit"],
+
+        reverse=True
     )
 
     return render_template(
@@ -264,13 +174,10 @@ def dashboard():
 if __name__ == "__main__":
 
     port = int(
-
         os.environ.get("PORT", 8080)
     )
 
     app.run(
-
         host="0.0.0.0",
-
         port=port
     )
