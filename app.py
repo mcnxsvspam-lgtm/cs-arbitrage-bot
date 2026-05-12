@@ -1,8 +1,3 @@
-from flask import Flask, render_template
-import os
-
-app = Flask(__name__)
-
 skins = [
     {
         "name": "AK-47 Redline",
@@ -14,8 +9,9 @@ skins = [
         "volume": 284,
         "profit": 6.85,
         "roi": 16.7,
-       "image": "https://images.steamusercontent.com/ugc/1829033884567642027/5A0D7A6A9A57A6D8D4B2E9F1D4B8A.png"
+        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdt7d-JmIGZnOHLP7LWnn8fuMhzj7GXodT22QbnqBVqZWj6xYbYwQvlr0s6fA/360fx360f"
     },
+
     {
         "name": "AWP Asiimov",
         "wear": "Battle-Scarred",
@@ -26,14 +22,6 @@ skins = [
         "volume": 163,
         "profit": 6.69,
         "roi": 9.7,
-       "image": "https://images.steamusercontent.com/ugc/1829033884567642211/8D0F8C6B0C5E4B7E9A8D1F2A3C.png"
+        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdt7d-JmIGZnOHLO77QgHIfuMhzj7GXodT22QbnqBVqZWj6xYbYwQvlr0s6fA/360fx360f"
     }
 ]
-
-@app.route("/")
-def dashboard():
-    return render_template("index.html", skins=skins)
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
