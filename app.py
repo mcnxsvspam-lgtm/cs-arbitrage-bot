@@ -1,4 +1,6 @@
 from flask import Flask, render_template
+import requests
+import re
 import os
 
 app = Flask(__name__)
@@ -7,58 +9,87 @@ CSMARKET_SELL_FEE = 0.95
 CSMARKET_WITHDRAW_FEE = 0.95
 
 SEARCH_ITEMS = [
-    {
-        "name": "AK-47 Redline (Field-Tested)",
-        "cs_price": 52
-    },
 
-    {
-        "name": "AWP Asiimov (Battle-Scarred)",
-        "cs_price": 97
-    },
+    "AK-47 Redline (Field-Tested)",
 
-    {
-        "name": "M4A1-S Printstream (Field-Tested)",
-        "cs_price": 134
-    },
+    "AWP Asiimov (Battle-Scarred)",
 
-    {
-        "name": "USP-S Kill Confirmed (Minimal Wear)",
-        "cs_price": 118
-    }
+    "M4A1-S Printstream (Field-Tested)",
+
+    "USP-S Kill Confirmed (Minimal Wear)"
 ]
 
 
-def get_steam_price(item_name):
+def get_item_nameid(item_name):
 
-    fake_prices = {
+    url = f"https://steamcommunity.com/market/listings/730/{item_name}"
 
-        "AK-47 Redline (Field-Tested)": 49.12,
-
-        "AWP Asiimov (Battle-Scarred)": 91.55,
-
-        "M4A1-S Printstream (Field-Tested)": 128.33,
-
-        "USP-S Kill Confirmed (Minimal Wear)": 109.42
+    headers = {
+        "User-Agent": "Mozilla/5.0"
     }
 
-    fake_volumes = {
+    r = requests.get(url, headers=headers)
 
-        "AK-47 Redline (Field-Tested)": 284,
+    match = re.search(
+        r"Market_LoadOrderSpread\(\s?(\d+)\s?\)",
+        r.text
+    )
 
-        "AWP Asiimov (Battle-Scarred)": 163,
+    if match:
+        return match.group(1)
 
-        "M4A1-S Printstream (Field-Tested)": 82,
+    return None
 
-        "USP-S Kill Confirmed (Minimal Wear)": 97
+
+def get_steam_data(item_name):
+
+    item_nameid = get_item_nameid(item_name)
+
+    if not item_nameid:
+        return None
+
+    url = "https://steamcommunity.com/market/itemordershistogram"
+
+    params = {
+        "country": "DE",
+        "language": "english",
+        "currency": 3,
+        "item_nameid": item_nameid,
+        "two_factor": 0
     }
 
-    return {
-
-        "lowest_price": fake_prices.get(item_name, 0),
-
-        "volume": fake_volumes.get(item_name, 0)
+    headers = {
+        "User-Agent": "Mozilla/5.0"
     }
+
+    r = requests.get(
+        url,
+        params=params,
+        headers=headers
+    )
+
+    data = r.json()
+
+    return data
+
+
+def parse_price(price):
+
+    if not price:
+        return 0
+
+    price = (
+        str(price)
+        .replace("€", "")
+        .replace(",", ".")
+        .strip()
+    )
+
+    try:
+        return float(price)
+
+    except:
+        return 0
 
 
 @app.route("/")
@@ -68,71 +99,68 @@ def dashboard():
 
     for item in SEARCH_ITEMS:
 
-        steam = get_steam_price(
-            item["name"]
-        )
+        try:
 
-        steam_price = steam.get(
-            "lowest_price"
-        )
+            steam = get_steam_data(item)
 
-        volume = steam.get(
-            "volume"
-        )
+            if not steam:
+                continue
 
-        cs_price = item["cs_price"]
+            lowest_sell = parse_price(
+                steam.get("lowest_sell_order")
+            ) / 100
 
-        cashout = round(
+            highest_buy = parse_price(
+                steam.get("highest_buy_order")
+            ) / 100
 
-            cs_price
-            * CSMARKET_SELL_FEE
-            * CSMARKET_WITHDRAW_FEE,
+            spread = 0
 
-            2
-        )
+            if lowest_sell > 0:
 
-        profit = round(
+                spread = round(
 
-            cashout - steam_price,
+                    (
+                        (lowest_sell - highest_buy)
+                        / lowest_sell
+                    ) * 100,
 
-            2
-        )
+                    2
+                )
 
-        roi = 0
+            steam_after_fee = round(
 
-        if steam_price > 0:
-
-            roi = round(
-
-                (profit / steam_price) * 100,
+                highest_buy * 0.8697,
 
                 2
             )
 
-        skins.append({
+            liquidity_score = 100 - spread
 
-            "name": item["name"],
+            skins.append({
 
-            "steam_price": steam_price,
+                "name": item,
 
-            "cs_price": cs_price,
+                "lowest_sell": lowest_sell,
 
-            "cashout": cashout,
+                "highest_buy": highest_buy,
 
-            "profit": profit,
+                "steam_after_fee": steam_after_fee,
 
-            "roi": roi,
+                "spread": spread,
 
-            "volume": volume,
+                "liquidity": round(liquidity_score),
 
-            "image": "https://community.cloudflare.steamstatic.com/economy/image/class/730/188530139/360fx360f"
-        })
+                "image": "https://community.cloudflare.steamstatic.com/economy/image/class/730/188530139/360fx360f"
+            })
+
+        except Exception as e:
+
+            print(e)
 
     skins.sort(
 
-        key=lambda x: x["profit"],
-
-        reverse=True
+        key=lambda x: x["spread"]
     )
 
     return render_template(
