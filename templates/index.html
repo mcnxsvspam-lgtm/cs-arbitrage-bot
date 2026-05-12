@@ -1,240 +1,75 @@
-<!DOCTYPE html>
-<html>
+CS Route Scanner
+Live Steam + CSMarket scanner for cash preservation routes.
 
-<head>
+CASHOUT PROFIT ROUTES
+LIVE Steam priceoverview + order histogram
+CSMarket market.csgo.com JSON
+FILTER €{{ min_price|int }}-€{{ max_price|int }} / vol {{ min_volume }}+
+UPDATED {{ updated_at }}
+ROWS {{ scan_count }}
+{% if errors %}
+{% for error in errors %}
+{{ error }}
+{% endfor %}
+{% endif %} {% if mode == 'cashout' %}
+Cashout Scanner
+Steam -> CSMarket -> withdraw. Ranked by kept %, liquidity, and realistic FastSell exit.
 
-    <title>CS Route Scanner</title>
+final cash = FastSell * 0.9025
+{% for skin in cashout_rows %} {% else %} {% endfor %}
+Item	Steam Lowest	Steam Buy	Spread	Steam After Fee	CSMarket Lowest	FastSell	Panic	Final Cash	Loss	Kept	Vol	Depth	Sale Time	Liquidity	Safe Undercut
+{% if skin.image %}{% endif %} {{ skin.name }}	{{ skin.steam_lowest|eur }}	{{ skin.steam_buy|eur }}	{{ skin.steam_spread|pc }}	{{ skin.steam_after_fee|eur }}	{{ skin.csmarket_lowest|eur }}	{{ skin.fastsell|eur }}	{{ skin.panic_sell|eur }}	{{ skin.final_cash|eur }}	-{{ skin.loss|eur }} / {{ skin.loss_pct|pc }}	{{ skin.kept_pct|pc }}	{{ skin.steam_volume }}	{{ skin.steam_buy_depth }}/{{ skin.steam_sell_depth }}	{{ skin.avg_sale_time }}	{{ skin.liquidity }} {{ skin.liquidity_score }}	{{ skin.safe_undercut_price|eur }} -{{ skin.safe_undercut_pct|pc }}
+No live rows yet. Steam or CSMarket may be rate-limiting; refresh in a minute.
+{% endif %} {% if mode == 'profit' %}
+Profit Scanner
+CSMarket -> Steam. Low volume and wide-spread rows are filtered before ranking.
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+profit = Steam after fee - CSMarket buy
+{% for skin in profit_rows %} {% else %} {% endfor %}
+Item	CSMarket Buy	Steam Lowest	Steam Buy	Spread	Steam After Fee	Profit	ROI	Vol	Depth	Sale Time	Liquidity	Risk
+{% if skin.image %}{% endif %} {{ skin.name }}	{{ skin.csmarket_lowest|eur }}	{{ skin.steam_lowest|eur }}	{{ skin.steam_buy|eur }}	{{ skin.steam_spread|pc }}	{{ skin.steam_after_fee|eur }}	{{ skin.profit|eur }}	{{ skin.profit_roi|pc }}	{{ skin.steam_volume }}	{{ skin.steam_buy_depth }}/{{ skin.steam_sell_depth }}	{{ skin.avg_sale_time }}	{{ skin.liquidity }} {{ skin.liquidity_score }}	{{ skin.risk }}
+No live profit rows yet.
+{% endif %} {% if mode == 'routes' %}
+Real Actionable Routes
+Only routes where final withdraw cash is greater than start cash. Steam leftovers are not counted as cash.
 
-</head>
-
-<body>
-
-<div class="header">
-
-    <h1>CS Route Scanner</h1>
-
-    <p>
-        steam ↔ csmarket routes
-    </p>
-
-</div>
-
-<div class="section-title">
-
-    PROFIT SCANNER
-
-</div>
-
-<div class="subtitle">
-
-    buy on csmarket → sell on steam
-
-</div>
-
-<div class="grid">
-
-{% for skin in profit_routes %}
-
-<div class="card">
-
-    <img src="{{ skin.image }}"
-         class="skin-image">
-
-    <div class="content">
-
-        <h2>{{ skin.name }}</h2>
-
-        <div class="prices">
-
-            <div class="price-row">
-
-                <span>
-                    CSMarket Buy
-                </span>
-
-                <span>
-                    €{{ skin.buy }}
-                </span>
-
-            </div>
-
-            <div class="arrow">
-                ↑
-            </div>
-
-            <div class="price-row">
-
-                <span>
-                    Steam Sell
-                </span>
-
-                <span>
-                    €{{ skin.sell }}
-                </span>
-
-            </div>
-
-            <div class="price-row">
-
-                <span>
-                    After Steam Fee
-                </span>
-
-                <span>
-                    €{{ skin.after_fee }}
-                </span>
-
-            </div>
-
-        </div>
-
-        <div class="
-            profit
-
-            {% if skin.profit > 0 %}
-                green
-            {% else %}
-                red
-            {% endif %}
-        ">
-
-            {% if skin.profit > 0 %}
-                +€{{ skin.profit }}
-            {% else %}
-                -€{{ skin.profit|abs }}
-            {% endif %}
-
-        </div>
-
-        <div class="bottom">
-
-            <div>
-                ROI {{ skin.roi }}%
-            </div>
-
-            <div>
-                Vol {{ skin.volume }}
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
+start cash < final withdraw cash
+{% for route in actionable_routes %}
+ROUTE #{{ loop.index }}
+CSMarket -> Steam -> CSMarket -> Withdraw
++{{ route.net_profit|eur }} {{ route.net_profit_pct|pc }}
+START
+{{ route.start_cash|eur }}
+cash on CSMarket
+BUY
+{% if route.entry_image %}{% endif %} {{ route.entry_name }}
+{{ route.entry_csmarket_buy|eur }}
+on CSMarket
+SELL
+{{ route.entry_steam_sell|eur }}
+on Steam, after fee {{ route.entry_steam_after_fee|eur }}
+REDEPLOY
+{% if route.exit_image %}{% endif %} {{ route.exit_qty }}x {{ route.exit_name }}
+{{ route.steam_spent|eur }}
+Steam leftover {{ route.steam_leftover|eur }}
+FASTSELL
+{{ route.exit_fastsell|eur }} each
+after all fees {{ route.exit_final_cash_each|eur }} each
+FINAL
+{{ route.final_cash|eur }}
+withdraw cash
+CONF {{ route.confidence }} LIQ {{ route.liquidity }} {{ route.liquidity_score }} TIME {{ route.estimated_time }} ENTRY {{ route.entry_sale_time }} EXIT {{ route.exit_sale_time }} SCORE {{ route.score }}
+{% else %}
+0 real actionable routes right now
+No route passed the strict filter: positive withdraw profit, different redeploy item, liquidity 50+, spread <= 12%, real FastSell exit.
 
 {% endfor %}
+Multi-step Routes
+Route overview. The actionable block above is stricter and only shows positive final cash cycles.
 
-</div>
-
-<div class="section-title second">
-
-    CASHOUT SCANNER
-
-</div>
-
-<div class="subtitle">
-
-    buy on steam → cashout via csmarket
-
-</div>
-
-<div class="grid">
-
-{% for skin in cashout_routes %}
-
-<div class="card">
-
-    <img src="{{ skin.image }}"
-         class="skin-image">
-
-    <div class="content">
-
-        <h2>{{ skin.name }}</h2>
-
-        <div class="prices">
-
-            <div class="price-row">
-
-                <span>
-                    Steam Buy
-                </span>
-
-                <span>
-                    €{{ skin.steam_buy }}
-                </span>
-
-            </div>
-
-            <div class="arrow">
-                ↓
-            </div>
-
-            <div class="price-row">
-
-                <span>
-                    CSMarket Sell
-                </span>
-
-                <span>
-                    €{{ skin.csmarket_sell }}
-                </span>
-
-            </div>
-
-            <div class="price-row">
-
-                <span>
-                    After All Fees
-                </span>
-
-                <span>
-                    €{{ skin.cashout }}
-                </span>
-
-            </div>
-
-        </div>
-
-        <div class="
-            profit
-
-            {% if skin.profit > 0 %}
-                green
-            {% else %}
-                red
-            {% endif %}
-        ">
-
-            {% if skin.profit > 0 %}
-                +€{{ skin.profit }}
-            {% else %}
-                -€{{ skin.profit|abs }}
-            {% endif %}
-
-        </div>
-
-        <div class="bottom">
-
-            <div>
-                ROI {{ skin.roi }}%
-            </div>
-
-            <div>
-                Vol {{ skin.volume }}
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-{% endfor %}
-
-</div>
-
-</body>
-</html>
+CSMarket -> Steam -> CSMarket -> card
+{% for route in routes_rows %} {% else %} {% endfor %}
+Route	Leg 1	Leg 2	Cycle Result	Exit Time	Risk
+{{ route.route }}	{{ route.leg_1 }}	{{ route.leg_2 }}	{{ route.result }}	{{ route.time }}	{{ route.risk }}
+Not enough live rows to build routes.
+{% endif %}
