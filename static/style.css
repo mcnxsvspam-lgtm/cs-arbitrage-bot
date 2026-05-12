@@ -1,1 +1,62 @@
+body {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 30px;
+}
 
+.card {
+    background: #171b26;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid #262d3f;
+    transition: 0.2s;
+}
+
+.card:hover {
+    transform: scale(1.02);
+}
+
+.skin-image {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    background: #111;
+}
+
+.content {
+    padding: 20px;
+}
+
+h2 {
+    margin-top: 0;
+}
+
+.wear {
+    color: #8b9bb4;
+    margin-bottom: 10px;
+}
+
+.float {
+    margin-bottom: 15px;
+}
+
+.prices {
+    line-height: 1.8;
+}
+
+.profit {
+    margin-top: 20px;
+    font-size: 32px;
+    color: #4eff88;
+    font-weight: bold;
+}
+
+.roi {
+    margin-top: 10px;
+    color: #61b3ff;
+}
+
+.volume {
+    margin-top: 10px;
+    color: #aab7cf;
+}
