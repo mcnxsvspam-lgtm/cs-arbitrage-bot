@@ -1,198 +1,100 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
+from urllib.parse import quote
+import html
+import json
 import os
-import random
+import re
+import time
+
+import requests
 
 app = Flask(__name__)
 
-STEAM_FEE = 0.8697
+STEAM_APP_ID = 730
+STEAM_FEE_MULTIPLIER = 0.8697
+CSMARKET_CASHOUT_MULTIPLIER = 0.9025
+STEAM_CURRENCY = int(os.environ.get("STEAM_CURRENCY", "3"))
+STEAM_COUNTRY = os.environ.get("STEAM_COUNTRY", "AT")
+STEAM_LANGUAGE = os.environ.get("STEAM_LANGUAGE", "english")
+CSMARKET_CURRENCY = os.environ.get("CSMARKET_CURRENCY", "EUR")
+STEAM_NAMEID_INDEX_URL = os.environ.get(
+    "STEAM_NAMEID_INDEX_URL",
+    "https://raw.githubusercontent.com/somespecialone/steam-item-name-ids/master/data/cs2.json",
+)
+MIN_PRICE = float(os.environ.get("MIN_SCAN_PRICE", "10"))
+MAX_PRICE = float(os.environ.get("MAX_SCAN_PRICE", "150"))
+MIN_VOLUME = int(os.environ.get("MIN_SCAN_VOLUME", "20"))
+MIN_ROUTE_PROFIT = float(os.environ.get("MIN_ROUTE_PROFIT", "0.25"))
+CACHE_TTL = int(os.environ.get("CACHE_TTL_SECONDS", "300"))
 
-CSMARKET_SELL_FEE = 0.95
-WITHDRAW_FEE = 0.95
+SESSION = requests.Session()
+SESSION.headers.update({
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+})
 
-ITEMS = [
+CACHE = {}
 
-    {
-        "name": "AK-47 Redline (Field-Tested)",
-        "steam_sell": 39.10,
-        "steam_buy": 36.30,
-        "csmarket_price": 41.20,
-        "volume": 284
-    },
-
-    {
-        "name": "AWP Asiimov (Battle-Scarred)",
-        "steam_sell": 91.55,
-        "steam_buy": 87.00,
-        "csmarket_price": 96.50,
-        "volume": 163
-    },
-
-    {
-        "name": "M4A1-S Printstream (Battle-Scarred)",
-        "steam_sell": 128.33,
-        "steam_buy": 121.00,
-        "csmarket_price": 135.90,
-        "volume": 82
-    },
-
-    {
-        "name": "USP-S Kill Confirmed (Field-Tested)",
-        "steam_sell": 108.00,
-        "steam_buy": 102.50,
-        "csmarket_price": 115.00,
-        "volume": 97
-    },
-
-    {
-        "name": "Desert Eagle Printstream (Field-Tested)",
-        "steam_sell": 44.49,
-        "steam_buy": 42.52,
-        "csmarket_price": 47.20,
-        "volume": 215
-    }
+ITEM_POOL = [
+    "AK-47 | Redline (Field-Tested)",
+    "AK-47 | Legion of Anubis (Field-Tested)",
+    "AK-47 | Nightwish (Field-Tested)",
+    "M4A1-S | Cyrex (Field-Tested)",
+    "M4A1-S | Decimator (Field-Tested)",
+    "M4A1-S | Printstream (Battle-Scarred)",
+    "M4A4 | The Emperor (Field-Tested)",
+    "M4A4 | Desolate Space (Field-Tested)",
+    "AWP | Asiimov (Battle-Scarred)",
+    "AWP | Neo-Noir (Field-Tested)",
+    "USP-S | Kill Confirmed (Field-Tested)",
+    "USP-S | The Traitor (Field-Tested)",
+    "Glock-18 | Vogue (Field-Tested)",
+    "Desert Eagle | Printstream (Field-Tested)",
+    "Desert Eagle | Code Red (Field-Tested)",
 ]
 
-
-def get_image():
-
-    return (
-        "https://community.cloudflare."
-        "steamstatic.com/economy/"
-        "image/class/730/188530139/360fx360f"
-    )
+ALLOWED_WEARS = ["Field-Tested", "Well-Worn", "Battle-Scarred"]
+IGNORED_WORDS = ["Souvenir", "Sticker", "StatTrak", "Capsule", "Patch", "Music Kit"]
 
 
-@app.route("/")
-def dashboard():
+def cached(key, loader, ttl=CACHE_TTL):
+    now = time.time()
+    hit = CACHE.get(key)
+    if hit and now - hit["time"] < ttl:
+        return hit["value"]
 
-    profit_routes = []
-
-    cashout_routes = []
-
-    for item in ITEMS:
-
-        steam_after_fee = round(
-
-            item["steam_sell"]
-            * STEAM_FEE,
-
-            2
-        )
-
-        profit = round(
-
-            steam_after_fee
-            - item["csmarket_price"],
-
-            2
-        )
-
-        roi = round(
-
-            (
-                profit
-                / item["csmarket_price"]
-            ) * 100,
-
-            2
-        )
-
-        profit_routes.append({
-
-            "name": item["name"],
-
-            "buy": item["csmarket_price"],
-
-            "sell": item["steam_sell"],
-
-            "after_fee": steam_after_fee,
-
-            "profit": profit,
-
-            "roi": roi,
-
-            "volume": item["volume"],
-
-            "image": get_image()
-        })
-
-        csmarket_after = round(
-
-            item["csmarket_price"]
-            * CSMARKET_SELL_FEE
-            * WITHDRAW_FEE,
-
-            2
-        )
-
-        cashout_loss = round(
-
-            csmarket_after
-            - item["steam_sell"],
-
-            2
-        )
-
-        cashout_roi = round(
-
-            (
-                cashout_loss
-                / item["steam_sell"]
-            ) * 100,
-
-            2
-        )
-
-        cashout_routes.append({
-
-            "name": item["name"],
-
-            "steam_buy": item["steam_sell"],
-
-            "csmarket_sell": item["csmarket_price"],
-
-            "cashout": csmarket_after,
-
-            "profit": cashout_loss,
-
-            "roi": cashout_roi,
-
-            "volume": item["volume"],
-
-            "image": get_image()
-        })
-
-    profit_routes.sort(
-
-        key=lambda x: x["profit"],
-
-        reverse=True
-    )
-
-    cashout_routes.sort(
-
-        key=lambda x: x["roi"],
-
-        reverse=True
-    )
-
-    return render_template(
-
-        "index.html",
-
-        profit_routes=profit_routes,
-
-        cashout_routes=cashout_routes
-    )
+    value = loader()
+    CACHE[key] = {"time": now, "value": value}
+    return value
 
 
-if __name__ == "__main__":
+def parse_price(value):
+    if value in [None, "", "-"]:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
 
-    port = int(
-        os.environ.get("PORT", 8080)
-    )
+    text = str(value).replace("\xa0", " ").strip()
+    text = re.sub(r"[^\d,.\-]", "", text)
+    if not text:
+        return None
 
-    app.run(
-        host="0.0.0.0",
-        port=port
-    )
+    if "," in text and "." not in text:
+        text = text.replace(",", ".")
+    elif "," in text and "." in text:
+        text = text.replace(",", "")
+
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def parse_int(value):
+    if value in [None, "", "-"]:
+        return 0
+    digits = re.sub(r"[^\d]", "", str(value))
