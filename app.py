@@ -4,161 +4,174 @@ import random
 
 app = Flask(__name__)
 
-MIN_PRICE = 10
-MAX_PRICE = 150
-
-MAX_SPREAD = 15
-
-MIN_VOLUME = 20
+STEAM_FEE = 0.8697
 
 CSMARKET_SELL_FEE = 0.95
-CSMARKET_WITHDRAW_FEE = 0.95
+WITHDRAW_FEE = 0.95
 
 ITEMS = [
 
-    "AK-47 Redline (Field-Tested)",
+    {
+        "name": "AK-47 Redline (Field-Tested)",
+        "steam_sell": 39.10,
+        "steam_buy": 36.30,
+        "csmarket_price": 41.20,
+        "volume": 284
+    },
 
-    "AK-47 Neon Rider (Field-Tested)",
+    {
+        "name": "AWP Asiimov (Battle-Scarred)",
+        "steam_sell": 91.55,
+        "steam_buy": 87.00,
+        "csmarket_price": 96.50,
+        "volume": 163
+    },
 
-    "AK-47 Bloodsport (Well-Worn)",
+    {
+        "name": "M4A1-S Printstream (Battle-Scarred)",
+        "steam_sell": 128.33,
+        "steam_buy": 121.00,
+        "csmarket_price": 135.90,
+        "volume": 82
+    },
 
-    "M4A1-S Printstream (Battle-Scarred)",
+    {
+        "name": "USP-S Kill Confirmed (Field-Tested)",
+        "steam_sell": 108.00,
+        "steam_buy": 102.50,
+        "csmarket_price": 115.00,
+        "volume": 97
+    },
 
-    "M4A4 Temukau (Field-Tested)",
-
-    "AWP Asiimov (Battle-Scarred)",
-
-    "USP-S Kill Confirmed (Field-Tested)",
-
-    "Desert Eagle Printstream (Field-Tested)",
-
-    "Glock-18 Vogue (Field-Tested)",
-
-    "Driver Gloves Imperial Plaid (Battle-Scarred)"
+    {
+        "name": "Desert Eagle Printstream (Field-Tested)",
+        "steam_sell": 44.49,
+        "steam_buy": 42.52,
+        "csmarket_price": 47.20,
+        "volume": 215
+    }
 ]
 
 
-def generate_market_data(item):
+def get_image():
 
-    steam_lowest = round(
-        random.uniform(10, 150),
-        2
+    return (
+        "https://community.cloudflare."
+        "steamstatic.com/economy/"
+        "image/class/730/188530139/360fx360f"
     )
-
-    spread_percent = round(
-        random.uniform(2, 14),
-        2
-    )
-
-    highest_buy = round(
-
-        steam_lowest
-        * (1 - spread_percent / 100),
-
-        2
-    )
-
-    steam_after_fee = round(
-
-        highest_buy * 0.8697,
-
-        2
-    )
-
-    csmarket_sell = round(
-
-        steam_after_fee
-        * random.uniform(1.01, 1.12),
-
-        2
-    )
-
-    csmarket_after_fees = round(
-
-        csmarket_sell
-        * CSMARKET_SELL_FEE
-        * CSMARKET_WITHDRAW_FEE,
-
-        2
-    )
-
-    final_profit = round(
-
-        csmarket_after_fees
-        - steam_lowest,
-
-        2
-    )
-
-    roi = round(
-
-        (
-            final_profit
-            / steam_lowest
-        ) * 100,
-
-        2
-    )
-
-    volume = random.randint(20, 500)
-
-    liquidity_score = round(
-        100 - spread_percent
-    )
-
-    return {
-
-        "name": item,
-
-        "steam_lowest": steam_lowest,
-
-        "highest_buy": highest_buy,
-
-        "steam_after_fee": steam_after_fee,
-
-        "csmarket_sell": csmarket_sell,
-
-        "cashout": csmarket_after_fees,
-
-        "profit": final_profit,
-
-        "roi": roi,
-
-        "spread": spread_percent,
-
-        "volume": volume,
-
-        "liquidity": liquidity_score,
-
-        "image": (
-            "https://community.cloudflare."
-            "steamstatic.com/economy/"
-            "image/class/730/188530139/360fx360f"
-        )
-    }
 
 
 @app.route("/")
 def dashboard():
 
-    skins = []
+    profit_routes = []
+
+    cashout_routes = []
 
     for item in ITEMS:
 
-        skin = generate_market_data(item)
+        steam_after_fee = round(
 
-        if (
-            skin["steam_lowest"] >= MIN_PRICE
-            and skin["steam_lowest"] <= MAX_PRICE
-            and skin["spread"] <= MAX_SPREAD
-            and skin["volume"] >= MIN_VOLUME
-        ):
+            item["steam_sell"]
+            * STEAM_FEE,
 
-            skins.append(skin)
+            2
+        )
 
-    skins.sort(
+        profit = round(
+
+            steam_after_fee
+            - item["csmarket_price"],
+
+            2
+        )
+
+        roi = round(
+
+            (
+                profit
+                / item["csmarket_price"]
+            ) * 100,
+
+            2
+        )
+
+        profit_routes.append({
+
+            "name": item["name"],
+
+            "buy": item["csmarket_price"],
+
+            "sell": item["steam_sell"],
+
+            "after_fee": steam_after_fee,
+
+            "profit": profit,
+
+            "roi": roi,
+
+            "volume": item["volume"],
+
+            "image": get_image()
+        })
+
+        csmarket_after = round(
+
+            item["csmarket_price"]
+            * CSMARKET_SELL_FEE
+            * WITHDRAW_FEE,
+
+            2
+        )
+
+        cashout_loss = round(
+
+            csmarket_after
+            - item["steam_sell"],
+
+            2
+        )
+
+        cashout_roi = round(
+
+            (
+                cashout_loss
+                / item["steam_sell"]
+            ) * 100,
+
+            2
+        )
+
+        cashout_routes.append({
+
+            "name": item["name"],
+
+            "steam_buy": item["steam_sell"],
+
+            "csmarket_sell": item["csmarket_price"],
+
+            "cashout": csmarket_after,
+
+            "profit": cashout_loss,
+
+            "roi": cashout_roi,
+
+            "volume": item["volume"],
+
+            "image": get_image()
+        })
+
+    profit_routes.sort(
 
         key=lambda x: x["profit"],
+
+        reverse=True
+    )
+
+    cashout_routes.sort(
+
+        key=lambda x: x["roi"],
 
         reverse=True
     )
@@ -167,7 +180,9 @@ def dashboard():
 
         "index.html",
 
-        skins=skins
+        profit_routes=profit_routes,
+
+        cashout_routes=cashout_routes
     )
 
 
