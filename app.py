@@ -1,26 +1,4 @@
-from flask import Flask, render_template, request
-from urllib.parse import quote
-import html
-import json
-import os
-import re
-import time
 
-import requests
-
-app = Flask(__name__)
-
-STEAM_APP_ID = 730
-STEAM_FEE_MULTIPLIER = 0.8697
-CSMARKET_CASHOUT_MULTIPLIER = 0.9025
-STEAM_CURRENCY = int(os.environ.get("STEAM_CURRENCY", "3"))
-STEAM_COUNTRY = os.environ.get("STEAM_COUNTRY", "AT")
-STEAM_LANGUAGE = os.environ.get("STEAM_LANGUAGE", "english")
-CSMARKET_CURRENCY = os.environ.get("CSMARKET_CURRENCY", "EUR")
-STEAM_NAMEID_INDEX_URL = os.environ.get(
-    "STEAM_NAMEID_INDEX_URL",
-    "https://raw.githubusercontent.com/somespecialone/steam-item-name-ids/master/data/cs2.json",
-)
 MIN_PRICE = float(os.environ.get("MIN_SCAN_PRICE", "10"))
 MAX_PRICE = float(os.environ.get("MAX_SCAN_PRICE", "150"))
 MIN_VOLUME = int(os.environ.get("MIN_SCAN_VOLUME", "20"))
@@ -28,73 +6,96 @@ MIN_ROUTE_PROFIT = float(os.environ.get("MIN_ROUTE_PROFIT", "0.25"))
 CACHE_TTL = int(os.environ.get("CACHE_TTL_SECONDS", "300"))
 
 SESSION = requests.Session()
-SESSION.headers.update({
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0 Safari/537.36"
-    ),
-    "Accept-Language": "en-US,en;q=0.9",
-})
-
-CACHE = {}
-
-ITEM_POOL = [
-    "AK-47 | Redline (Field-Tested)",
-    "AK-47 | Legion of Anubis (Field-Tested)",
-    "AK-47 | Nightwish (Field-Tested)",
-    "M4A1-S | Cyrex (Field-Tested)",
-    "M4A1-S | Decimator (Field-Tested)",
-    "M4A1-S | Printstream (Battle-Scarred)",
-    "M4A4 | The Emperor (Field-Tested)",
-    "M4A4 | Desolate Space (Field-Tested)",
-    "AWP | Asiimov (Battle-Scarred)",
-    "AWP | Neo-Noir (Field-Tested)",
-    "USP-S | Kill Confirmed (Field-Tested)",
-    "USP-S | The Traitor (Field-Tested)",
-    "Glock-18 | Vogue (Field-Tested)",
-    "Desert Eagle | Printstream (Field-Tested)",
-    "Desert Eagle | Code Red (Field-Tested)",
-]
-
-ALLOWED_WEARS = ["Field-Tested", "Well-Worn", "Battle-Scarred"]
-IGNORED_WORDS = ["Souvenir", "Sticker", "StatTrak", "Capsule", "Patch", "Music Kit"]
+    return "1 day"
 
 
-def cached(key, loader, ttl=CACHE_TTL):
-    now = time.time()
-    hit = CACHE.get(key)
-    if hit and now - hit["time"] < ttl:
-        return hit["value"]
-
-    value = loader()
-    CACHE[key] = {"time": now, "value": value}
-    return value
+def sale_time_minutes(label):
+    return {
+        "5 min": 5,
+        "30 min": 30,
+        "2 hours": 120,
+        "1 day": 1440,
+    }.get(label, 1440)
 
 
-def parse_price(value):
-    if value in [None, "", "-"]:
-        return None
-    if isinstance(value, (int, float)):
-        return float(value)
-
-    text = str(value).replace("\xa0", " ").strip()
-    text = re.sub(r"[^\d,.\-]", "", text)
-    if not text:
-        return None
-
-    if "," in text and "." not in text:
-        text = text.replace(",", ".")
-    elif "," in text and "." in text:
-        text = text.replace(",", "")
-
-    try:
-        return float(text)
-    except ValueError:
-        return None
+def format_duration(minutes):
+    if minutes < 60:
+        return f"{minutes} min"
+    if minutes < 1440:
+        hours = round(minutes / 60, 1)
+        return f"{hours:g}h"
+    days = round(minutes / 1440, 1)
+    return f"{days:g}d"
 
 
-def parse_int(value):
-    if value in [None, "", "-"]:
-        return 0
-    digits = re.sub(r"[^\d]", "", str(value))
+def route_confidence(entry, exit_item, net_profit_pct):
+    min_liquidity = min(entry["liquidity_score"], exit_item["liquidity_score"])
+    entry_spread = entry["steam_spread"] if entry["steam_spread"] is not None else 99
+    exit_spread = exit_item["steam_spread"] if exit_item["steam_spread"] is not None else 99
+    max_spread = max(entry_spread, exit_spread)
+    min_depth = min(entry["steam_buy_depth"], exit_item["steam_buy_depth"])
+
+    if net_profit_pct >= 3 and min_liquidity >= 75 and max_spread <= 6 and min_depth >= 20:
+        return "HIGH"
+    if net_profit_pct >= 1 and min_liquidity >= 55 and max_spread <= 10:
+        return "MEDIUM"
+    return "LOW"
+
+
+def actionable_route_score(route):
+    confidence_score = {"HIGH": 30, "MEDIUM": 18, "LOW": 6}[route["confidence"]]
+    liquidity_score_part = min(route["liquidity_score"] / 100 * 30, 30)
+    profit_score = min(route["net_profit_pct"] * 8, 30)
+    speed_score = max(10 - route["estimated_minutes"] / 180, 0)
+    return round(profit_score + liquidity_score_part + confidence_score + speed_score, 2)
+
+
+def build_market_rows():
+    rows = []
+    errors = []
+    return routes
+
+
+def build_actionable_routes(rows):
+    routes = []
+    entries = [
+        row for row in rows
+        if row["profit"] is not None
+        and row["profit"] > 0
+        and row["risk"] == "OK"
+        and row["liquidity_score"] >= 50
+        and row["steam_spread"] is not None
+        and row["steam_spread"] <= 12
+        and row["steam_buy_depth"] >= 5
+    ]
+    exits = [
+        row for row in rows
+        if row["risk"] == "OK"
+        and row["liquidity_score"] >= 50
+        and row["steam_spread"] is not None
+        and row["steam_spread"] <= 12
+        and row["fastsell"] is not None
+        and row["final_cash"] is not None
+        and row["steam_buy_depth"] >= 5
+    ]
+
+    for entry in entries:
+        start_cash = entry["csmarket_lowest"]
+        steam_balance = entry["steam_after_fee"]
+
+        for exit_item in exits:
+            if exit_item["name"] == entry["name"]:
+                continue
+            if exit_item["steam_lowest"] <= 0:
+                continue
+
+            exit_qty = int(steam_balance // exit_item["steam_lowest"])
+            if exit_qty < 1:
+                continue
+
+            steam_spent = money(exit_qty * exit_item["steam_lowest"])
+            steam_leftover = money(steam_balance - steam_spent)
+            final_cash = money(exit_qty * exit_item["final_cash"])
+            net_profit = money(final_cash - start_cash)
+
+            if net_profit <= MIN_ROUTE_PROFIT:
