@@ -1,21 +1,35 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>CS Arbitrage Scanner</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Steam Cashout Scanner</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect"
+          href="https://fonts.googleapis.com">
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
+
 </head>
 
 <body>
 
 <div class="header">
-    <h1>CS Arbitrage Scanner</h1>
-    <p>Steam ↔ CSMarket opportunity tracker</p>
+
+    <h1>Steam Cashout Scanner</h1>
+
+    <p>
+        lowest-loss steam balance withdrawal
+    </p>
+
 </div>
 
 <div class="grid">
@@ -24,47 +38,75 @@
 
 <div class="card">
 
-    <img src="{{ skin.image }}" class="skin-image">
+    <img src="{{ skin.image }}"
+         class="skin-image">
 
     <div class="content">
 
         <h2>{{ skin.name }}</h2>
 
-        <div class="wear">
-            {{ skin.wear }}
-        </div>
-
-        <div class="float">
-            Float: {{ skin.float }}
-        </div>
-
         <div class="prices">
 
             <div class="price-row">
-                <span class="label">CSMarket</span>
-                <span>€{{ skin.cs_price }}</span>
+                <span class="label">
+                    Steam Buy
+                </span>
+
+                <span>
+                    €{{ skin.steam_price }}
+                </span>
+            </div>
+
+            <div class="arrow">
+                ↓
             </div>
 
             <div class="price-row">
-                <span class="label">Steam</span>
-                <span>{{ skin.steam_price }}</span>
+                <span class="label">
+                    CSMarket Sell
+                </span>
+
+                <span>
+                    €{{ skin.cs_price }}
+                </span>
             </div>
 
             <div class="price-row">
-                <span class="label">Volume</span>
-                <span>{{ skin.volume }}</span>
+                <span class="label">
+                    After Fees
+                </span>
+
+                <span>
+                    €{{ skin.cashout }}
+                </span>
             </div>
 
         </div>
 
-        <div class="profit">
-            +€{{ skin.profit }}
+        <div class="profit
+            {% if skin.profit > 0 %}
+                green
+            {% else %}
+                red
+            {% endif %}
+        ">
+
+            {% if skin.profit > 0 %}
+                +€{{ skin.profit }}
+            {% else %}
+                -€{{ skin.profit|abs }}
+            {% endif %}
+
         </div>
 
         <div class="bottom">
 
             <div class="roi">
                 ROI {{ skin.roi }}%
+            </div>
+
+            <div class="volume">
+                Vol {{ skin.volume }}
             </div>
 
         </div>
