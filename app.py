@@ -1,71 +1,136 @@
 from flask import Flask, render_template
+import requests
+import os
 
 app = Flask(__name__)
 
-STEAM_FEE = 0.87
+STEAM_FEE = 0.8697
 CSMARKET_SELL_FEE = 0.95
 CSMARKET_WITHDRAW_FEE = 0.95
 
-skins = [
+SEARCH_ITEMS = [
     {
-        "name": "AK-47 Redline",
-        "wear": "Field-Tested",
-        "float": 0.21,
-        "steam_price": 58,
-        "steam_fastsell": 55,
-        "cs_price": 41,
-        "volume": 284,
-        "image": "https://community.cloudflare.steamstatic.com/economy/image/class/730/188530139/360fx360f"
+        "name": "AK-47 Redline (Field-Tested)",
+        "cs_price": 52
     },
+
     {
-        "name": "AWP Asiimov",
-        "wear": "Battle-Scarred",
-        "float": 0.68,
-        "steam_price": 91,
-        "steam_fastsell": 87,
-        "cs_price": 69,
-        "volume": 163,
-        "image": "https://community.cloudflare.steamstatic.com/economy/image/class/730/188530170/360fx360f"
+        "name": "AWP Asiimov (Battle-Scarred)",
+        "cs_price": 97
     },
+
     {
-        "name": "M4A1-S Printstream",
-        "wear": "Field-Tested",
-        "float": 0.18,
-        "steam_price": 144,
-        "steam_fastsell": 139,
-        "cs_price": 118,
-        "volume": 82,
-        "image": "https://community.cloudflare.steamstatic.com/economy/image/class/730/188530208/360fx360f"
+        "name": "M4A1-S Printstream (Field-Tested)",
+        "cs_price": 134
+    },
+
+    {
+        "name": "USP-S Kill Confirmed (Minimal Wear)",
+        "cs_price": 118
     }
 ]
 
 
-def calculate_profit(item):
+def get_steam_price(item_name):
 
-    steam_after_fee = item["steam_fastsell"] * STEAM_FEE
+    url = "https://steamcommunity.com/market/priceoverview/"
 
-    profit = round(steam_after_fee - item["cs_price"], 2)
+    params = {
+        "appid": 730,
+        "currency": 3,
+        "market_hash_name": item_name
+    }
 
-    roi = round((profit / item["cs_price"]) * 100, 2)
+    r = requests.get(url, params=params)
 
-    item["profit"] = profit
-    item["roi"] = roi
+    data = r.json()
 
-    return item
+    return data
+
+
+def parse_price(price_string):
+
+    if not price_string:
+        return 0
+
+    price_string = (
+        price_string
+        .replace("€", "")
+        .replace(",", ".")
+        .strip()
+    )
+
+    try:
+        return float(price_string)
+    except:
+        return 0
 
 
 @app.route("/")
 def dashboard():
 
-    processed = []
+    skins = []
 
-    for skin in skins:
-        processed.append(calculate_profit(skin))
+    for item in SEARCH_ITEMS:
 
-    processed.sort(key=lambda x: x["profit"], reverse=True)
+        steam = get_steam_price(item["name"])
 
-    return render_template("index.html", skins=processed)
+        steam_price = parse_price(
+            steam.get("lowest_price")
+        )
+
+        volume = steam.get("volume", "0")
+
+        cs_price = item["cs_price"]
+
+        cs_after_fees = (
+            cs_price
+            * CSMARKET_SELL_FEE
+            * CSMARKET_WITHDRAW_FEE
+        )
+
+        profit = round(
+            cs_after_fees - steam_price,
+            2
+        )
+
+        roi = 0
+
+        if steam_price > 0:
+            roi = round(
+                (profit / steam_price) * 100,
+                2
+            )
+
+        skins.append({
+            "name": item["name"],
+            "steam_price": steam_price,
+            "cs_price": cs_price,
+            "cashout": round(cs_after_fees, 2),
+            "profit": profit,
+            "roi": roi,
+            "volume": volume,
+            "image": "https://community.cloudflare.steamstatic.com/economy/image/class/730/188530139/360fx360f"
+        })
+
+    skins.sort(
+        key=lambda x: x["profit"],
+        reverse=True
+    )
+
+    return render_template(
+        "index.html",
+        skins=skins
+    )
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+
+    port = int(
+        os.environ.get("PORT", 8080)
+    )
+
+    app.run(
+        host="0.0.0.0",
+        port=port
+    )
