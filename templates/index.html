@@ -7,8 +7,10 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
 <div class="header">
@@ -18,4 +20,62 @@
 
 <div class="grid">
 
-{% for s
+{% for skin in skins %}
+
+<div class="card">
+
+    <img src="{{ skin.image }}" class="skin-image">
+
+    <div class="content">
+
+        <h2>{{ skin.name }}</h2>
+
+        <div class="wear">
+            {{ skin.wear }}
+        </div>
+
+        <div class="float">
+            Float: {{ skin.float }}
+        </div>
+
+        <div class="prices">
+
+            <div class="price-row">
+                <span class="label">CSMarket</span>
+                <span>€{{ skin.cs_price }}</span>
+            </div>
+
+            <div class="price-row">
+                <span class="label">Steam</span>
+                <span>{{ skin.steam_price }}</span>
+            </div>
+
+            <div class="price-row">
+                <span class="label">Volume</span>
+                <span>{{ skin.volume }}</span>
+            </div>
+
+        </div>
+
+        <div class="profit">
+            +€{{ skin.profit }}
+        </div>
+
+        <div class="bottom">
+
+            <div class="roi">
+                ROI {{ skin.roi }}%
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</body>
+</html>
