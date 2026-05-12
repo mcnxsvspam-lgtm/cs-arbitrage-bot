@@ -1,107 +1,99 @@
 * {
-    margin: 0;
-    padding: 0;
     box-sizing: border-box;
 }
 
 body {
-    background: #07111f;
-    color: white;
-    font-family: Inter, sans-serif;
-    padding: 40px;
+    margin: 0;
+    background: #070a0f;
+    color: #d6deec;
+    font-family: Inter, Arial, sans-serif;
+    font-size: 12px;
 }
 
-.header {
-    margin-bottom: 40px;
+.app {
+    width: min(1600px, calc(100% - 24px));
+    margin: 0 auto;
+    padding: 18px 0;
 }
 
-.header h1 {
-    font-size: 48px;
-    margin-bottom: 10px;
+.topbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 12px;
 }
 
-.header p {
-    color: #7b8ba7;
+h1,
+h2,
+p {
+    margin: 0;
 }
 
-.grid {
+h1 {
+    color: #f4f7fb;
+    font-size: 24px;
+    font-weight: 760;
+    letter-spacing: 0;
+}
+
+h2 {
+    color: #f4f7fb;
+    font-size: 15px;
+    font-weight: 760;
+    letter-spacing: 0;
+}
+
+p {
+    color: #78869a;
+    margin-top: 4px;
+}
+
+.tabs {
+    display: flex;
+    gap: 6px;
+}
+
+.tabs a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    min-width: 88px;
+    padding: 0 12px;
+    border: 1px solid #222b39;
+    color: #8794a8;
+    background: #0b1017;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.tabs a.active {
+    color: #eef5ff;
+    border-color: #3675ff;
+    background: #102247;
+}
+
+.statusbar {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(5, max-content);
+    gap: 1px;
+    margin-bottom: 12px;
+    overflow-x: auto;
 }
 
-.card {
-    background: #101827;
-    border-radius: 24px;
-    overflow: hidden;
-    border: 1px solid #1e293b;
+.statusbar div,
+.alerts div {
+    background: #0c1119;
+    border: 1px solid #1c2533;
+    color: #96a6ba;
+    padding: 7px 9px;
+    white-space: nowrap;
 }
 
-.skin-image {
-    width: 100%;
-    height: 220px;
-    object-fit: contain;
-    background: #0b1220;
-    padding: 20px;
-}
-
-.content {
-    padding: 24px;
-}
-
-.content h2 {
-    font-size: 32px;
-    margin-bottom: 14px;
-}
-
-.wear {
-    display: inline-block;
-    background: #1d2940;
-    color: #9bb0d3;
-    padding: 8px 14px;
-    border-radius: 999px;
-    font-size: 14px;
-    margin-bottom: 20px;
-}
-
-.float {
-    color: #9aa9c2;
-    margin-bottom: 24px;
-}
-
-.prices {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 28px;
-}
-
-.price-row {
-    display: flex;
-    justify-content: space-between;
-}
-
-.label {
-    color: #7c8ba8;
-}
-
-.profit {
-    font-size: 48px;
-    font-weight: 700;
-    color: #4dff88;
-    margin-bottom: 16px;
-}
-
-.bottom {
-    display: flex;
-    justify-content: space-between;
-}
-
-.roi {
-    color: #5ba7ff;
-    font-weight: 700;
-}
-
-.volume {
-    color: #7c8ba8;
+.statusbar span {
+    color: #dbe7f8;
+    font-weight: 800;
+    margin-right: 6px;
 }
