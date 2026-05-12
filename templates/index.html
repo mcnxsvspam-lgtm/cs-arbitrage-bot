@@ -3,7 +3,7 @@
 
 <head>
 
-    <title>Steam Liquidity Scanner</title>
+    <title>CS Route Scanner</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
@@ -14,10 +14,10 @@
 
 <div class="header">
 
-    <h1>Steam Liquidity Scanner</h1>
+    <h1>CS Route Scanner</h1>
 
     <p>
-        real steam order analysis
+        steam ↔ csmarket liquidity routes
     </p>
 
 </div>
@@ -39,17 +39,17 @@
 
             <div class="price-row">
                 <span class="label">
-                    Lowest Sell
+                    Steam Lowest Sell
                 </span>
 
                 <span>
-                    €{{ skin.lowest_sell }}
+                    €{{ skin.steam_lowest }}
                 </span>
             </div>
 
             <div class="price-row">
                 <span class="label">
-                    Highest Buy
+                    Steam Highest Buy
                 </span>
 
                 <span>
@@ -59,7 +59,7 @@
 
             <div class="price-row">
                 <span class="label">
-                    After Steam Fee
+                    Steam After Fee
                 </span>
 
                 <span>
@@ -67,18 +67,66 @@
                 </span>
             </div>
 
+            <div class="arrow">
+                ↓
+            </div>
+
+            <div class="price-row">
+                <span class="label">
+                    CSMarket Sell
+                </span>
+
+                <span>
+                    €{{ skin.csmarket_sell }}
+                </span>
+            </div>
+
+            <div class="price-row">
+                <span class="label">
+                    After All Fees
+                </span>
+
+                <span>
+                    €{{ skin.cashout }}
+                </span>
+            </div>
+
         </div>
 
-        <div class="profit">
+        <div class="
+            profit
 
-            {{ skin.spread }}%
+            {% if skin.profit > 0 %}
+                green
+            {% else %}
+                red
+            {% endif %}
+        ">
+
+            {% if skin.profit > 0 %}
+                +€{{ skin.profit }}
+            {% else %}
+                -€{{ skin.profit|abs }}
+            {% endif %}
 
         </div>
 
         <div class="bottom">
 
             <div class="roi">
-                Spread
+                ROI {{ skin.roi }}%
+            </div>
+
+            <div class="volume">
+                Vol {{ skin.volume }}
+            </div>
+
+        </div>
+
+        <div class="bottom">
+
+            <div class="roi">
+                Spread {{ skin.spread }}%
             </div>
 
             <div class="volume">
