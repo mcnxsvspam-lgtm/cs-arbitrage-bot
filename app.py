@@ -4,7 +4,6 @@ import os
 
 app = Flask(__name__)
 
-STEAM_FEE = 0.8697
 CSMARKET_SELL_FEE = 0.95
 CSMARKET_WITHDRAW_FEE = 0.95
 
@@ -37,15 +36,21 @@ def get_steam_price(item_name):
 
     params = {
         "appid": 730,
-        "currency": 3,
+        "currency": 1,
         "market_hash_name": item_name
     }
 
-    r = requests.get(url, params=params)
+    try:
 
-    data = r.json()
+        r = requests.get(url, params=params)
 
-    return data
+        data = r.json()
+
+        return data
+
+    except:
+
+        return {}
 
 
 def parse_price(price_string):
@@ -55,6 +60,7 @@ def parse_price(price_string):
 
     price_string = (
         price_string
+        .replace("$", "")
         .replace("€", "")
         .replace(",", ".")
         .strip()
@@ -62,6 +68,7 @@ def parse_price(price_string):
 
     try:
         return float(price_string)
+
     except:
         return 0
 
@@ -83,33 +90,43 @@ def dashboard():
 
         cs_price = item["cs_price"]
 
-        cs_after_fees = (
+        cashout = round(
             cs_price
             * CSMARKET_SELL_FEE
-            * CSMARKET_WITHDRAW_FEE
+            * CSMARKET_WITHDRAW_FEE,
+            2
         )
 
         profit = round(
-            cs_after_fees - steam_price,
+            cashout - steam_price,
             2
         )
 
         roi = 0
 
         if steam_price > 0:
+
             roi = round(
                 (profit / steam_price) * 100,
                 2
             )
 
         skins.append({
+
             "name": item["name"],
+
             "steam_price": steam_price,
+
             "cs_price": cs_price,
-            "cashout": round(cs_after_fees, 2),
+
+            "cashout": cashout,
+
             "profit": profit,
+
             "roi": roi,
+
             "volume": volume,
+
             "image": "https://community.cloudflare.steamstatic.com/economy/image/class/730/188530139/360fx360f"
         })
 
