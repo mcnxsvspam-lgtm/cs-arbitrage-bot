@@ -1,101 +1,90 @@
+from flask import Flask, render_template, request
+from datetime import datetime
 
-MIN_PRICE = float(os.environ.get("MIN_SCAN_PRICE", "10"))
-MAX_PRICE = float(os.environ.get("MAX_SCAN_PRICE", "150"))
-MIN_VOLUME = int(os.environ.get("MIN_SCAN_VOLUME", "20"))
-MIN_ROUTE_PROFIT = float(os.environ.get("MIN_ROUTE_PROFIT", "0.25"))
-CACHE_TTL = int(os.environ.get("CACHE_TTL_SECONDS", "300"))
-
-SESSION = requests.Session()
-    return "1 day"
+app = Flask(__name__)
 
 
-def sale_time_minutes(label):
-    return {
-        "5 min": 5,
-        "30 min": 30,
-        "2 hours": 120,
-        "1 day": 1440,
-    }.get(label, 1440)
+@app.template_filter("eur")
+def eur(value):
+    try:
+        return f"€{float(value):.2f}"
+    except:
+        return "€0.00"
 
 
-def format_duration(minutes):
-    if minutes < 60:
-        return f"{minutes} min"
-    if minutes < 1440:
-        hours = round(minutes / 60, 1)
-        return f"{hours:g}h"
-    days = round(minutes / 1440, 1)
-    return f"{days:g}d"
+@app.template_filter("pc")
+def pc(value):
+    try:
+        return f"{float(value):.2f}%"
+    except:
+        return "0%"
 
 
-def route_confidence(entry, exit_item, net_profit_pct):
-    min_liquidity = min(entry["liquidity_score"], exit_item["liquidity_score"])
-    entry_spread = entry["steam_spread"] if entry["steam_spread"] is not None else 99
-    exit_spread = exit_item["steam_spread"] if exit_item["steam_spread"] is not None else 99
-    max_spread = max(entry_spread, exit_spread)
-    min_depth = min(entry["steam_buy_depth"], exit_item["steam_buy_depth"])
+@app.route("/")
+def dashboard():
 
-    if net_profit_pct >= 3 and min_liquidity >= 75 and max_spread <= 6 and min_depth >= 20:
-        return "HIGH"
-    if net_profit_pct >= 1 and min_liquidity >= 55 and max_spread <= 10:
-        return "MEDIUM"
-    return "LOW"
+    mode = request.args.get("mode", "cashout")
 
-
-def actionable_route_score(route):
-    confidence_score = {"HIGH": 30, "MEDIUM": 18, "LOW": 6}[route["confidence"]]
-    liquidity_score_part = min(route["liquidity_score"] / 100 * 30, 30)
-    profit_score = min(route["net_profit_pct"] * 8, 30)
-    speed_score = max(10 - route["estimated_minutes"] / 180, 0)
-    return round(profit_score + liquidity_score_part + confidence_score + speed_score, 2)
-
-
-def build_market_rows():
-    rows = []
-    errors = []
-    return routes
-
-
-def build_actionable_routes(rows):
-    routes = []
-    entries = [
-        row for row in rows
-        if row["profit"] is not None
-        and row["profit"] > 0
-        and row["risk"] == "OK"
-        and row["liquidity_score"] >= 50
-        and row["steam_spread"] is not None
-        and row["steam_spread"] <= 12
-        and row["steam_buy_depth"] >= 5
-    ]
-    exits = [
-        row for row in rows
-        if row["risk"] == "OK"
-        and row["liquidity_score"] >= 50
-        and row["steam_spread"] is not None
-        and row["steam_spread"] <= 12
-        and row["fastsell"] is not None
-        and row["final_cash"] is not None
-        and row["steam_buy_depth"] >= 5
+    cashout_rows = [
+        {
+            "name": "AK-47 Redline (Field-Tested)",
+            "image": "https://community.cloudflare.steamstatic.com/economy/image/class/730/188530139/330fx330f",
+            "steam_buy": 36.30,
+            "steam_spread": 1.62,
+            "steam_after_fee": 31.57,
+            "csmarket_lowest": 35.24,
+            "fastsell": 34.80,
+            "final_cash": 31.40,
+            "kept_pct": 86.2,
+            "steam_volume": 139,
+            "liquidity": "HIGH",
+            "liquidity_score": 77,
+        }
     ]
 
-    for entry in entries:
-        start_cash = entry["csmarket_lowest"]
-        steam_balance = entry["steam_after_fee"]
+    profit_rows = [
+        {
+            "name": "AK-47 Nightwish (Field-Tested)",
+            "image": "https://community.cloudflare.steamstatic.com/economy/image/class/730/188530139/330fx330f",
+            "csmarket_lowest": 55.66,
+            "steam_buy": 73.17,
+            "steam_after_fee": 63.73,
+            "profit": 8.07,
+            "profit_roi": 14.5,
+            "steam_spread": 0.15,
+            "steam_volume": 119,
+            "risk": "OK",
+            "liquidity": "MID",
+            "liquidity_score": 71,
+        }
+    ]
 
-        for exit_item in exits:
-            if exit_item["name"] == entry["name"]:
-                continue
-            if exit_item["steam_lowest"] <= 0:
-                continue
+    actionable_routes = [
+        {
+            "net_profit": 3.12,
+            "net_profit_pct": 3.12,
+            "entry_name": "AK-47 Nightwish (FT)",
+            "entry_csmarket_buy": 82,
+            "entry_steam_sell": 101,
+            "entry_steam_after_fee": 87.83,
+            "exit_qty": 2,
+            "exit_name": "AK-47 Redline (FT)",
+            "final_cash": 103.12,
+            "confidence": "MEDIUM",
+            "liquidity": "HIGH",
+        }
+    ]
 
-            exit_qty = int(steam_balance // exit_item["steam_lowest"])
-            if exit_qty < 1:
-                continue
+    return render_template(
+        "index.html",
+        mode=mode,
+        cashout_rows=cashout_rows,
+        profit_rows=profit_rows,
+        actionable_routes=actionable_routes,
+        scan_count=len(cashout_rows),
+        updated_at=datetime.now().strftime("%H:%M:%S")
+    )
 
-            steam_spent = money(exit_qty * exit_item["steam_lowest"])
-            steam_leftover = money(steam_balance - steam_spent)
-            final_cash = money(exit_qty * exit_item["final_cash"])
-            net_profit = money(final_cash - start_cash)
 
-            if net_profit <= MIN_ROUTE_PROFIT:
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)
