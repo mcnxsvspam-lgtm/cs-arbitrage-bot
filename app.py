@@ -14,7 +14,7 @@ skins = [
         "volume": 284,
         "profit": 6.85,
         "roi": 16.7,
-        "image": "https://cdn.cloudflare.steamstatic.com/apps/730/icons/econ/default_generated/weapon_ak47_cu_redline_light_large.png"
+        "image": "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdt7d-JmIGZnOHLP7LWnn8fuMhzj7GXodT22QbnqBVqZWj6xYbYwQvlr0s6fA/360fx360f"
     },
     {
         "name": "AWP Asiimov",
@@ -26,7 +26,7 @@ skins = [
         "volume": 163,
         "profit": 6.69,
         "roi": 9.7,
-        "image": "https://cdn.cloudflare.steamstatic.com/apps/730/icons/econ/default_generated/weapon_awp_cu_awp_asiimov_light_large.png"
+        "image": "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdt7d-JmIGZnOHLO77QgHIfuMhzj7GXodT22QbnqBVqZWj6xYbYwQvlr0s6fA/360fx360f"
     }
 ]
 
