@@ -17,14 +17,26 @@
     <h1>CS Route Scanner</h1>
 
     <p>
-        steam ↔ csmarket liquidity routes
+        steam ↔ csmarket routes
     </p>
+
+</div>
+
+<div class="section-title">
+
+    PROFIT SCANNER
+
+</div>
+
+<div class="subtitle">
+
+    buy on csmarket → sell on steam
 
 </div>
 
 <div class="grid">
 
-{% for skin in skins %}
+{% for skin in profit_routes %}
 
 <div class="card">
 
@@ -38,57 +50,43 @@
         <div class="prices">
 
             <div class="price-row">
-                <span class="label">
-                    Steam Lowest Sell
+
+                <span>
+                    CSMarket Buy
                 </span>
 
                 <span>
-                    €{{ skin.steam_lowest }}
-                </span>
-            </div>
-
-            <div class="price-row">
-                <span class="label">
-                    Steam Highest Buy
+                    €{{ skin.buy }}
                 </span>
 
-                <span>
-                    €{{ skin.highest_buy }}
-                </span>
-            </div>
-
-            <div class="price-row">
-                <span class="label">
-                    Steam After Fee
-                </span>
-
-                <span>
-                    €{{ skin.steam_after_fee }}
-                </span>
             </div>
 
             <div class="arrow">
-                ↓
+                ↑
             </div>
 
             <div class="price-row">
-                <span class="label">
-                    CSMarket Sell
+
+                <span>
+                    Steam Sell
                 </span>
 
                 <span>
-                    €{{ skin.csmarket_sell }}
+                    €{{ skin.sell }}
                 </span>
+
             </div>
 
             <div class="price-row">
-                <span class="label">
-                    After All Fees
+
+                <span>
+                    After Steam Fee
                 </span>
 
                 <span>
-                    €{{ skin.cashout }}
+                    €{{ skin.after_fee }}
                 </span>
+
             </div>
 
         </div>
@@ -113,24 +111,119 @@
 
         <div class="bottom">
 
-            <div class="roi">
+            <div>
                 ROI {{ skin.roi }}%
             </div>
 
-            <div class="volume">
+            <div>
                 Vol {{ skin.volume }}
             </div>
 
         </div>
 
-        <div class="bottom">
+    </div>
 
-            <div class="roi">
-                Spread {{ skin.spread }}%
+</div>
+
+{% endfor %}
+
+</div>
+
+<div class="section-title second">
+
+    CASHOUT SCANNER
+
+</div>
+
+<div class="subtitle">
+
+    buy on steam → cashout via csmarket
+
+</div>
+
+<div class="grid">
+
+{% for skin in cashout_routes %}
+
+<div class="card">
+
+    <img src="{{ skin.image }}"
+         class="skin-image">
+
+    <div class="content">
+
+        <h2>{{ skin.name }}</h2>
+
+        <div class="prices">
+
+            <div class="price-row">
+
+                <span>
+                    Steam Buy
+                </span>
+
+                <span>
+                    €{{ skin.steam_buy }}
+                </span>
+
             </div>
 
-            <div class="volume">
-                Liquidity {{ skin.liquidity }}/100
+            <div class="arrow">
+                ↓
+            </div>
+
+            <div class="price-row">
+
+                <span>
+                    CSMarket Sell
+                </span>
+
+                <span>
+                    €{{ skin.csmarket_sell }}
+                </span>
+
+            </div>
+
+            <div class="price-row">
+
+                <span>
+                    After All Fees
+                </span>
+
+                <span>
+                    €{{ skin.cashout }}
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="
+            profit
+
+            {% if skin.profit > 0 %}
+                green
+            {% else %}
+                red
+            {% endif %}
+        ">
+
+            {% if skin.profit > 0 %}
+                +€{{ skin.profit }}
+            {% else %}
+                -€{{ skin.profit|abs }}
+            {% endif %}
+
+        </div>
+
+        <div class="bottom">
+
+            <div>
+                ROI {{ skin.roi }}%
+            </div>
+
+            <div>
+                Vol {{ skin.volume }}
             </div>
 
         </div>
