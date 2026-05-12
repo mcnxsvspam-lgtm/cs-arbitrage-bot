@@ -1,76 +1,67 @@
-body {
-    color: white;
-}
-
-.header {
-    padding: 30px;
-}
-
-.header h1 {
-    margin: 0;
-    font-size: 40px;
-}
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    padding: 30px;
-}
-
-.card {
-    background: #171b26;
-    border-radius: 20px;
-    overflow: hidden;
-    border: 1px solid #262d3f;
-    transition: 0.2s;
-}
-
-.card:hover {
-    transform: scale(1.02);
-}
-
-.skin-image {
-    width: 100%;
-    height: 220px;
-    object-fit: cover;
-    background: #111;
+* {
 }
 
 .content {
-    padding: 20px;
+    padding: 24px;
 }
 
-h2 {
-    margin-top: 0;
-}
-
-.wear {
-    color: #8b9bb4;
+.content h2 {
+    font-size: 24px;
     margin-bottom: 10px;
 }
 
+.wear {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #1d2638;
+    color: #8ea2c9;
+    font-size: 13px;
+    margin-bottom: 18px;
+}
+
 .float {
-    margin-bottom: 15px;
+    color: #93a0bb;
+    margin-bottom: 18px;
 }
 
 .prices {
-    line-height: 1.8;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    color: #dbe6ff;
+}
+
+.label {
+    color: #7e8aa5;
 }
 
 .profit {
-    margin-top: 20px;
-    font-size: 32px;
-    color: #4eff88;
-    font-weight: bold;
+    font-size: 36px;
+    font-weight: 700;
+    color: #4dff88;
+    margin-bottom: 10px;
+}
+
+.bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
 }
 
 .roi {
-    margin-top: 10px;
     color: #61b3ff;
+    font-weight: 600;
 }
 
 .volume {
-    margin-top: 10px;
-    color: #aab7cf;
+    color: #7e8aa5;
+    font-size: 14px;
 }
