@@ -1,5 +1,4 @@
 from flask import Flask, render_template
-import requests
 import os
 
 app = Flask(__name__)
@@ -32,45 +31,34 @@ SEARCH_ITEMS = [
 
 def get_steam_price(item_name):
 
-    url = "https://steamcommunity.com/market/priceoverview/"
+    fake_prices = {
 
-    params = {
-        "appid": 730,
-        "currency": 1,
-        "market_hash_name": item_name
+        "AK-47 Redline (Field-Tested)": 49.12,
+
+        "AWP Asiimov (Battle-Scarred)": 91.55,
+
+        "M4A1-S Printstream (Field-Tested)": 128.33,
+
+        "USP-S Kill Confirmed (Minimal Wear)": 109.42
     }
 
-    try:
+    fake_volumes = {
 
-        r = requests.get(url, params=params)
+        "AK-47 Redline (Field-Tested)": 284,
 
-        data = r.json()
+        "AWP Asiimov (Battle-Scarred)": 163,
 
-        return data
+        "M4A1-S Printstream (Field-Tested)": 82,
 
-    except:
+        "USP-S Kill Confirmed (Minimal Wear)": 97
+    }
 
-        return {}
+    return {
 
+        "lowest_price": fake_prices.get(item_name, 0),
 
-def parse_price(price_string):
-
-    if not price_string:
-        return 0
-
-    price_string = (
-        price_string
-        .replace("$", "")
-        .replace("€", "")
-        .replace(",", ".")
-        .strip()
-    )
-
-    try:
-        return float(price_string)
-
-    except:
-        return 0
+        "volume": fake_volumes.get(item_name, 0)
+    }
 
 
 @app.route("/")
@@ -80,25 +68,33 @@ def dashboard():
 
     for item in SEARCH_ITEMS:
 
-        steam = get_steam_price(item["name"])
-
-        steam_price = parse_price(
-            steam.get("lowest_price")
+        steam = get_steam_price(
+            item["name"]
         )
 
-        volume = steam.get("volume", "0")
+        steam_price = steam.get(
+            "lowest_price"
+        )
+
+        volume = steam.get(
+            "volume"
+        )
 
         cs_price = item["cs_price"]
 
         cashout = round(
+
             cs_price
             * CSMARKET_SELL_FEE
             * CSMARKET_WITHDRAW_FEE,
+
             2
         )
 
         profit = round(
+
             cashout - steam_price,
+
             2
         )
 
@@ -107,7 +103,9 @@ def dashboard():
         if steam_price > 0:
 
             roi = round(
+
                 (profit / steam_price) * 100,
+
                 2
             )
 
@@ -131,12 +129,16 @@ def dashboard():
         })
 
     skins.sort(
+
         key=lambda x: x["profit"],
+
         reverse=True
     )
 
     return render_template(
+
         "index.html",
+
         skins=skins
     )
 
@@ -144,10 +146,13 @@ def dashboard():
 if __name__ == "__main__":
 
     port = int(
+
         os.environ.get("PORT", 8080)
     )
 
     app.run(
+
         host="0.0.0.0",
+
         port=port
     )
