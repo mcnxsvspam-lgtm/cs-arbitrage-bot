@@ -1,113 +1,76 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
 body {
-    background: #0b1020;
     color: white;
-    font-family: Inter, sans-serif;
-    padding: 40px;
 }
 
 .header {
-    margin-bottom: 40px;
+    padding: 30px;
 }
 
 .header h1 {
-    font-size: 42px;
-    margin-bottom: 10px;
-}
-
-.header p {
-    color: #7f8aa3;
+    margin: 0;
+    font-size: 40px;
 }
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 30px;
 }
 
 .card {
-    background: #111827;
-    border-radius: 24px;
+    background: #171b26;
+    border-radius: 20px;
     overflow: hidden;
-    border: 1px solid #1f2937;
+    border: 1px solid #262d3f;
     transition: 0.2s;
 }
 
 .card:hover {
-    transform: translateY(-4px);
+    transform: scale(1.02);
 }
 
 .skin-image {
     width: 100%;
     height: 220px;
-    object-fit: contain;
-    background: #0f172a;
-    padding: 20px;
+    object-fit: cover;
+    background: #111;
 }
 
 .content {
-    padding: 24px;
+    padding: 20px;
 }
 
-.content h2 {
-    font-size: 24px;
-    margin-bottom: 12px;
+h2 {
+    margin-top: 0;
 }
 
 .wear {
-    display: inline-block;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: #1e293b;
-    color: #94a3b8;
-    font-size: 13px;
-    margin-bottom: 18px;
-}
-
-.float {
-    margin-bottom: 20px;
-    color: #94a3b8;
-}
-
-.prices {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 24px;
-}
-
-.price-row {
-    display: flex;
-    justify-content: space-between;
-}
-
-.label {
-    color: #7f8aa3;
-}
-
-.profit {
-    font-size: 38px;
-    font-weight: 700;
-    color: #4ade80;
+    color: #8b9bb4;
     margin-bottom: 10px;
 }
 
-.bottom {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.float {
+    margin-bottom: 15px;
+}
+
+.prices {
+    line-height: 1.8;
+}
+
+.profit {
+    margin-top: 20px;
+    font-size: 32px;
+    color: #4eff88;
+    font-weight: bold;
 }
 
 .roi {
-    color: #60a5fa;
-    font-weight: 600;
+    margin-top: 10px;
+    color: #61b3ff;
 }
 
 .volume {
-    color: #7f8aa3;
+    margin-top: 10px;
+    color: #aab7cf;
 }
