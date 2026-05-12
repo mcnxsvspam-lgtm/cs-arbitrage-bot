@@ -1,14 +1,4 @@
 from flask import Flask, render_template
-app = Flask(__name__)
-
-STEAM_FEE = 0.87
-CSMARKET_SELL_FEE = 0.95
-CSMARKET_WITHDRAW_FEE = 0.95
-
-skins = [
-    {
-        "name": "AK-47 Redline",
-        "wear": "Field-Tested",
         "float": 0.21,
         "steam_price": 58,
         "steam_fastsell": 55,
