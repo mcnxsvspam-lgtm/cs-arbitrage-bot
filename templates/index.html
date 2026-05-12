@@ -3,20 +3,10 @@
 
 <head>
 
-    <title>Steam Cashout Scanner</title>
+    <title>Steam Liquidity Scanner</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
-
-    <link rel="preconnect"
-          href="https://fonts.googleapis.com">
-
-    <link rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet">
 
 </head>
 
@@ -24,10 +14,10 @@
 
 <div class="header">
 
-    <h1>Steam Cashout Scanner</h1>
+    <h1>Steam Liquidity Scanner</h1>
 
     <p>
-        lowest-loss steam balance withdrawal
+        real steam order analysis
     </p>
 
 </div>
@@ -49,64 +39,50 @@
 
             <div class="price-row">
                 <span class="label">
-                    Steam Buy
+                    Lowest Sell
                 </span>
 
                 <span>
-                    €{{ skin.steam_price }}
-                </span>
-            </div>
-
-            <div class="arrow">
-                ↓
-            </div>
-
-            <div class="price-row">
-                <span class="label">
-                    CSMarket Sell
-                </span>
-
-                <span>
-                    €{{ skin.cs_price }}
+                    €{{ skin.lowest_sell }}
                 </span>
             </div>
 
             <div class="price-row">
                 <span class="label">
-                    After Fees
+                    Highest Buy
                 </span>
 
                 <span>
-                    €{{ skin.cashout }}
+                    €{{ skin.highest_buy }}
+                </span>
+            </div>
+
+            <div class="price-row">
+                <span class="label">
+                    After Steam Fee
+                </span>
+
+                <span>
+                    €{{ skin.steam_after_fee }}
                 </span>
             </div>
 
         </div>
 
-        <div class="profit
-            {% if skin.profit > 0 %}
-                green
-            {% else %}
-                red
-            {% endif %}
-        ">
+        <div class="profit">
 
-            {% if skin.profit > 0 %}
-                +€{{ skin.profit }}
-            {% else %}
-                -€{{ skin.profit|abs }}
-            {% endif %}
+            {{ skin.spread }}%
 
         </div>
 
         <div class="bottom">
 
             <div class="roi">
-                ROI {{ skin.roi }}%
+                Spread
             </div>
 
             <div class="volume">
-                Vol {{ skin.volume }}
+                Liquidity {{ skin.liquidity }}/100
             </div>
 
         </div>
