@@ -1,334 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
     <title>CS Route Scanner</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
 
-<div class="topbar">
-
-    <div>
-
-        <h1>CS Route Scanner</h1>
-
-        <p>
-            live steam + csmarket liquidity engine
-        </p>
-
-    </div>
-
-    <div class="stats">
-
-        <span>
-            rows {{ scan_count }}
-        </span>
-
-        <span>
-            updated {{ updated_at }}
-        </span>
-
-    </div>
-
+<div class="topnav">
+    <a href="/?mode=cashout" class="{% if mode=='cashout' %}active{% endif %}">Cashout</a>
+    <a href="/?mode=profit" class="{% if mode=='profit' %}active{% endif %}">Profit</a>
+    <a href="/?mode=routes" class="{% if mode=='routes' %}active{% endif %}">Routes</a>
 </div>
 
-<div class="tabs">
-
-    <a href="/?mode=cashout"
-       class="{% if mode == 'cashout' %}active{% endif %}">
-        CASHOUT
-    </a>
-
-    <a href="/?mode=profit"
-       class="{% if mode == 'profit' %}active{% endif %}">
-        PROFIT
-    </a>
-
-    <a href="/?mode=routes"
-       class="{% if mode == 'routes' %}active{% endif %}">
-        ROUTES
-    </a>
-
-</div>
+<div class="container">
 
 {% if mode == 'cashout' %}
-
-<div class="section-title">
-
-    Steam → CSMarket → Withdraw
-
-</div>
-
-<table>
-
-    <thead>
-
-        <tr>
-
-            <th>Item</th>
-
-            <th>Steam Buy</th>
-
-            <th>Spread</th>
-
-            <th>Steam After Fee</th>
-
-            <th>CSMarket</th>
-
-            <th>FastSell</th>
-
-            <th>Final Cash</th>
-
-            <th>Kept</th>
-
-            <th>Volume</th>
-
-            <th>Liquidity</th>
-
-        </tr>
-
-    </thead>
-
-    <tbody>
-
-    {% for skin in cashout_rows %}
-
-        <tr>
-
-            <td class="item-cell">
-
-                {% if skin.image %}
-
-                <img src="{{ skin.image }}">
-
-                {% endif %}
-
-                {{ skin.name }}
-
-            </td>
-
-            <td>{{ skin.steam_buy|eur }}</td>
-
-            <td>{{ skin.steam_spread|pc }}</td>
-
-            <td>{{ skin.steam_after_fee|eur }}</td>
-
-            <td>{{ skin.csmarket_lowest|eur }}</td>
-
-            <td>{{ skin.fastsell|eur }}</td>
-
-            <td>{{ skin.final_cash|eur }}</td>
-
-            <td class="green">
-                {{ skin.kept_pct|pc }}
-            </td>
-
-            <td>{{ skin.steam_volume }}</td>
-
-            <td>
-
-                {{ skin.liquidity }}
-
-                {{ skin.liquidity_score }}
-
-            </td>
-
-        </tr>
-
-    {% endfor %}
-
-    </tbody>
-
-</table>
-
+    <h2>Cashout Scanner</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Highest Buy</th>
+                <th>Lowest Sell</th>
+                <th>Spread</th>
+                <th>Steam After Fee</th>
+                <th>CS Cheapest</th>
+                <th>FastSell</th>
+                <th>Final Cash</th>
+                <th>Kept %</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in cashout %}
+            <tr>
+                <td>{{ r.item }}</td>
+                <td>{{ r.highest_buy|eur }}</td>
+                <td>{{ r.lowest_sell|eur }}</td>
+                <td>{{ r.spread_pct|pc }}</td>
+                <td>{{ r.steam_after_fee|eur }}</td>
+                <td>{{ r.cs_cheapest|eur }}</td>
+                <td>{{ r.fastsell|eur }}</td>
+                <td>{{ r.final_cash|eur }}</td>
+                <td class="{% if r.kept_pct >= 100 %}green{% else %}red{% endif %}">
+                    {{ r.kept_pct|pc }}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 {% endif %}
+
 
 {% if mode == 'profit' %}
-
-<div class="section-title">
-
-    CSMarket → Steam
-
-</div>
-
-<table>
-
-    <thead>
-
-        <tr>
-
-            <th>Item</th>
-
-            <th>CS Buy</th>
-
-            <th>Steam Buy</th>
-
-            <th>Steam After Fee</th>
-
-            <th>Profit</th>
-
-            <th>ROI</th>
-
-            <th>Spread</th>
-
-            <th>Volume</th>
-
-            <th>Risk</th>
-
-        </tr>
-
-    </thead>
-
-    <tbody>
-
-    {% for skin in profit_rows %}
-
-        <tr>
-
-            <td class="item-cell">
-
-                {% if skin.image %}
-
-                <img src="{{ skin.image }}">
-
-                {% endif %}
-
-                {{ skin.name }}
-
-            </td>
-
-            <td>{{ skin.csmarket_lowest|eur }}</td>
-
-            <td>{{ skin.steam_buy|eur }}</td>
-
-            <td>{{ skin.steam_after_fee|eur }}</td>
-
-            <td class="green">
-                {{ skin.profit|eur }}
-            </td>
-
-            <td>{{ skin.profit_roi|pc }}</td>
-
-            <td>{{ skin.steam_spread|pc }}</td>
-
-            <td>{{ skin.steam_volume }}</td>
-
-            <td>{{ skin.risk }}</td>
-
-        </tr>
-
-    {% endfor %}
-
-    </tbody>
-
-</table>
-
+    <h2>Profit Scanner</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>CS Price</th>
+                <th>Steam After Fee</th>
+                <th>Profit</th>
+                <th>ROI %</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in profit %}
+            <tr>
+                <td>{{ r.item }}</td>
+                <td>{{ r.cs_price|eur }}</td>
+                <td>{{ r.steam_after_fee|eur }}</td>
+                <td class="{% if r.profit > 0 %}green{% else %}red{% endif %}">
+                    {{ r.profit|eur }}
+                </td>
+                <td class="{% if r.roi_pct > 0 %}green{% else %}red{% endif %}">
+                    {{ r.roi_pct|pc }}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 {% endif %}
+
 
 {% if mode == 'routes' %}
+    <h2>Routes Scanner</h2>
 
-<div class="section-title">
+    {% if routes|length == 0 %}
+        <div class="no-routes">0 real profitable routes right now</div>
+    {% else %}
+        {% for r in routes %}
+        <div class="route-card">
+            <h3>{{ r.entry_item }} → {{ r.exit_item }}</h3>
 
-    Real Actionable Routes
+            <div class="route-grid">
+                <div>Start Cash</div>
+                <div>{{ r.start_cash|eur }}</div>
 
-</div>
+                <div>Entry Price (CS)</div>
+                <div>{{ r.entry_cs_price|eur }}</div>
 
-<div class="routes-grid">
+                <div>Qty Entry</div>
+                <div>{{ r.qty_entry }}</div>
 
-{% for route in actionable_routes %}
+                <div>Steam After Fee / item</div>
+                <div>{{ r.steam_after_fee_per_item|eur }}</div>
 
-    <div class="route-card">
+                <div>Total Steam Balance</div>
+                <div>{{ r.steam_balance|eur }}</div>
 
-        <div class="route-profit">
+                <div>Exit Item Price (Steam)</div>
+                <div>{{ r.exit_item_price|eur }}</div>
 
-            +{{ route.net_profit|eur }}
+                <div>Qty Exit</div>
+                <div>{{ r.qty_exit }}</div>
 
+                <div>FastSell Price</div>
+                <div>{{ r.fastsell_price|eur }}</div>
+
+                <div>Final Cash</div>
+                <div>{{ r.final_cash|eur }}</div>
+
+                <div>Profit</div>
+                <div class="{% if r.profit>0 %}green{% else %}red{% endif %}">
+                    {{ r.profit|eur }}
+                </div>
+
+                <div>Kept %</div>
+                <div class="{% if r.kept_pct>100 %}green{% else %}red{% endif %}">
+                    {{ r.kept_pct|pc }}
+                </div>
+            </div>
         </div>
-
-        <div class="route-percent">
-
-            {{ route.net_profit_pct|pc }}
-
-        </div>
-
-        <div class="route-step">
-
-            <strong>BUY:</strong>
-
-            {{ route.entry_name }}
-
-        </div>
-
-        <div class="route-step">
-
-            CSMarket:
-            {{ route.entry_csmarket_buy|eur }}
-
-        </div>
-
-        <div class="route-step">
-
-            Steam:
-            {{ route.entry_steam_sell|eur }}
-
-        </div>
-
-        <div class="route-step">
-
-            After Steam Fee:
-            {{ route.entry_steam_after_fee|eur }}
-
-        </div>
-
-        <div class="route-step">
-
-            REDEPLOY:
-            {{ route.exit_qty }}x
-            {{ route.exit_name }}
-
-        </div>
-
-        <div class="route-step">
-
-            FINAL:
-            {{ route.final_cash|eur }}
-
-        </div>
-
-        <div class="route-meta">
-
-            {{ route.confidence }}
-            /
-            {{ route.liquidity }}
-
-        </div>
-
-    </div>
-
-{% else %}
-
-    <div class="empty">
-
-        no profitable routes right now
-
-    </div>
-
-{% endfor %}
-
-</div>
-
+        {% endfor %}
+    {% endif %}
 {% endif %}
+
+</div>
 
 </body>
 </html>
