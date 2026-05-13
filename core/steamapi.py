@@ -8,7 +8,11 @@ class SteamAPI:
         self.currency = currency
 
     def _priceoverview(self, appid, market_hash_name):
-        url = "[steamcommunity.com](https://steamcommunity.com/market/priceoverview/)"
+        # Build the URL in pieces to avoid Markdown auto‑formatting
+        base = "https://" + "steamcommunity.com"
+        endpoint = "/market/priceoverview/"
+        url = base + endpoint
+
         params = {
             "currency": 3,
             "appid": appid,
@@ -18,7 +22,9 @@ class SteamAPI:
         return r.json()
 
     def _extract_item_nameid(self, appid, market_hash_name):
-        url = f"[steamcommunity.com](https://steamcommunity.com/market/listings/{appid}/{market_hash_name})"
+        base = "https://" + "steamcommunity.com"
+        url = base + f"/market/listings/{appid}/{market_hash_name}"
+
         html = requests.get(url, timeout=8).text
 
         marker = "Market_LoadOrderSpread("
@@ -35,7 +41,9 @@ class SteamAPI:
         if not item_nameid:
             return {}
 
-        url = "[steamcommunity.com](https://steamcommunity.com/market/itemordershistogram)"
+        base = "https://" + "steamcommunity.com"
+        url = base + "/market/itemordershistogram"
+
         params = {
             "currency": 3,
             "language": "en",
