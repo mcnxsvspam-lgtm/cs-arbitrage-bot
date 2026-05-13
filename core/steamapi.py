@@ -1,5 +1,4 @@
 import requests
-import math
 
 STEAM_FEE_MULTIPLIER = 0.8697
 
